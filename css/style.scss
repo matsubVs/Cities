@@ -152,7 +152,7 @@ body {
 
 #select-cities~.focus-border i:before,
 #select-cities~.focus-border i:after {
-  content: "";
+  content: ""; 
   position: absolute;
   top: 0;
   left: 0;
@@ -179,4 +179,8 @@ body {
 #select-cities:focus~.focus-border i:after {
   height: 100%;
   transition: 0.4s;
+}
+
+.dropdown-lists__list {
+    display: none;
 }

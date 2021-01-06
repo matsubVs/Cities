@@ -221,4 +221,8 @@ body .main .input-cities label {
   -webkit-transition: 0.4s;
   transition: 0.4s;
 }
+
+.dropdown-lists__list--autocomplete, .dropdown-lists__list--select, .dropdown-lists__list--default  {
+  display: none;
+}
 /*# sourceMappingURL=style.css.map */
