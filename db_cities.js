@@ -34,6 +34,8 @@ class FindCity {
             storage.sort((a, b) => {
                 if (a['country'] === localeCountry[this.locale]) {
                     return 1;
+                } else {
+                    return -1;
                 }
             });
 
@@ -45,7 +47,7 @@ class FindCity {
 
     }
 
-    generateDropdownMenu(menuType, country = null) {
+    generateDropdownMenu(menuType, option = null) {
         if (menuType === 'default') {
             const blocks = [];
             this.data.forEach(item => {
@@ -59,8 +61,9 @@ class FindCity {
             const innerBlock = this.default.querySelector('.dropdown-lists__col');
             innerBlock.textContent = '';
             blocks.forEach(item => innerBlock.appendChild(item));
+
         } else if (menuType === 'select') {
-            const selectedCountry = this.data.filter(item => item['country'] === country);
+            const selectedCountry = this.data.filter(item => item['country'] === option);
 
             const countryBlock = document.createElement('div');
             countryBlock.classList.add('dropdown-lists__countryBlock');
@@ -69,7 +72,40 @@ class FindCity {
             const innerBlock = this.select.querySelector('.dropdown-lists__col');
             innerBlock.textContent = '';
             innerBlock.appendChild(childBlock); 
+
+        } else if (menuType === 'autocomplete') {
+            const countryBlock = document.createElement('div');
+            countryBlock.classList.add('dropdown-lists__countryBlock');
+
+            const childBlock = this.generateAutocompleteBlock(countryBlock, option);
+
+            const innerBlock = this.autocomplete.querySelector('.dropdown-lists__col');
+            innerBlock.textContent = '';
+            innerBlock.appendChild(childBlock); 
         }
+    }
+
+    generateAutocompleteBlock(parentNode, concurrence) {
+        const allConcurrence = [];
+
+        this.data.forEach(item => {
+            allConcurrence.push(item['cities'].filter(city => 
+                city['name'].toLowerCase().includes(concurrence.toLowerCase())));
+        });
+
+        allConcurrence.forEach(item => item.forEach(city => {
+            const cityBlock = document.createElement('div');
+            cityBlock.classList.add('dropdown-lists__line');
+
+            cityBlock.insertAdjacentHTML('beforeend', `
+                <div class="dropdown-lists__city">${city.name}</div>
+                <div class="dropdown-lists__count">${city.count}</div>
+            `);
+
+            parentNode.append(cityBlock);
+        }));
+
+        return parentNode;
     }
 
     generateSelectBlock(parentNode, block) {
@@ -110,6 +146,8 @@ class FindCity {
         const sortedCities = block['cities'].sort((a, b) => {
             if (+a['count'] > +b['count']) {
                 return 1;
+            } else {
+                return -1;
             }
         }).reverse();
         const topCities = sortedCities.slice(0, 3);
@@ -153,6 +191,7 @@ class FindCity {
                 this.closeBtn.style.display = 'block';
                 this.default.style.display = 'none';
                 this.select.style.display = 'none';
+                this.generateDropdownMenu('autocomplete', this.input.value);
                 this.autocomplete.style.display = 'block';
             } else {
                 this.closeBtn.style.display = 'none';
@@ -174,7 +213,7 @@ class FindCity {
         this.dropdown.addEventListener('click', event => {
             const target = event.target;
 
-            if (target.matches('.dropdown-lists__city, .dropdown-lists__country')) {
+            if (target.matches('.dropdown-lists__city')) {
                 this.input.value = target.textContent;
                 this.input.focus();
                 this.closeBtn.style.display = 'block';
@@ -195,15 +234,89 @@ class FindCity {
 
             } else if (target.matches('.dropdown-lists__total-line')) {
                 if (target.closest('.dropdown-lists__list--select')) {
-                    this.select.style.display = 'none';
-                    this.default.style.display = 'block';
+                    this.animateBlockSwitching(this.select, this.default);
                 } else if (target.closest('.dropdown-lists__list--default')) {
-                    this.select.style.display = 'block';
-                    this.default.style.display = 'none';
                     this.generateDropdownMenu('select', target.querySelector('.dropdown-lists__country').textContent);
+                    this.animateBlockSwitching(this.default, this.select);
                 }
             }
         });
+    }
+
+    animate({ timing, draw, duration }) {
+
+        const start = performance.now();
+      
+        requestAnimationFrame(function animate(time) {
+            let timeFraction = (time - start) / duration;
+            if (timeFraction > 1) timeFraction = 1;
+    
+            const progress = timing(timeFraction);
+    
+            draw(progress);
+    
+            if (timeFraction < 1) {
+                requestAnimationFrame(animate);
+            }
+    
+        });
+    }
+
+    animateBlockSwitching(leftBlock, rightBlock) {
+        leftBlock.style.position = 'relative';
+        rightBlock.style.position = 'relative';
+
+        if (leftBlock === this.default) {
+            rightBlock.style.left = '1000px';
+            this.animate({
+                duration: 300,
+                timing(timeFraction) {
+                    return timeFraction;
+                },
+                draw(progress) {
+                    leftBlock.style.right = progress * 1000 + 'px';
+                }
+            });
+            setTimeout(() => leftBlock.style.display = 'none', 200);
+
+            setTimeout(() => {
+                rightBlock.style.display = 'block';
+                this.animate({
+                    duration: 300,
+                    timing(timeFraction) {
+                        return timeFraction;
+                    },
+                    draw(progress) {
+                        rightBlock.style.left = (1000 - progress * 1000) + 'px';
+                    }
+                });
+            }, 200);
+
+        } else if (leftBlock === this.select) {
+            this.animate({
+                duration: 300,
+                timing(timeFraction) {
+                    return timeFraction;
+                },
+                draw(progress) {
+                    leftBlock.style.left = progress + 'px';
+                }
+            });
+            setTimeout(() => leftBlock.style.display = 'none', 200);
+
+            setTimeout(() => {
+                rightBlock.style.display = 'block';
+                this.animate({
+                    duration: 300,
+                    timing(timeFraction) {
+                        return timeFraction;
+                    },
+                    draw(progress) {
+                        rightBlock.style.right = (1000 - progress * 1000) + 'px';
+                    }
+                });
+            }, 200);
+        }
     }
 
     getLocale() {
