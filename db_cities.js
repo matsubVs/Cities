@@ -8,8 +8,8 @@ const localeCountry = {
 class FindCity {
     constructor(dropdown, def, select, autocomplete, button, input, closeBtn) {
         this.locale = this.getLocale();
+        this.data;
         this.fetchData();
-        this.data = this.getData();
 
         this.dropdown = document.querySelector(dropdown);
         this.default = document.querySelector(def);
@@ -18,9 +18,6 @@ class FindCity {
         this.button = document.querySelector(button);
         this.input = document.querySelector(input);
         this.closeBtn = document.querySelector(closeBtn);
-
-        this.generateDropdownMenu('default');
-        this.eventHandlers();
     }
 
     checkInput() {
@@ -28,7 +25,6 @@ class FindCity {
     }
 
     getData() {
-        console.log(localStorage);
         try {
             const storage = JSON.parse(localStorage.getItem('locale'));
             storage.sort((a, b) => {
@@ -324,15 +320,22 @@ class FindCity {
             return document.cookie.split('=')[1];
         }
 
-        const locale = prompt('Введите ваше местоположение:\n  --> RU\n  --> EN\n  --> DE');
-        document.cookie = `locale=${locale}`;
-        return locale;
+        const locale = prompt('Введите ваш язык:\n  --> RU\n  --> EN\n  --> DE');
+        document.cookie = `locale=${locale.toUpperCase()}`;
+        return locale.toUpperCase();
     }
 
     fetchData() {
         fetch('./db_cities.json')
             .then(data => data.json())
-            .then(response => localStorage.setItem('locale', JSON.stringify(response[this.locale])))
+            .then(response => {
+                localStorage.setItem('locale', JSON.stringify(response[this.locale]))
+                setTimeout(() => {
+                    this.data = this.getData();
+                    this.generateDropdownMenu('default');
+                    this.eventHandlers();
+                }, 500); 
+            })
             .catch(error => console.log(error));
     }
 }
